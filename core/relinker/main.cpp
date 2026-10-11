@@ -1,5 +1,7 @@
 #include <Cli.hpp>
 #include <domain/Types.hpp>
+#include <diagnostics/Logger.hpp>
+#include <diagnostics/ProfileScope.hpp>
 #include <io/FileReader.hpp>
 #include <io/NativePath.hpp>
 #include <elfpatcher/linux/LinuxElfPatcher.hpp>
@@ -43,6 +45,8 @@ int Run(const int argc, char* argv[]) {
     try {
         args = Cli::ParseArgs(argc, argv);
     } catch (const std::exception& e) {
+        LOG_ERROR(Diagnostics::LogChannel::Loader, std::string("CLI parse error: ") + e.what());
+        Diagnostics::Logger::GetInstance().DumpRingBuffer();
         std::cerr << "FAIL: " << e.what() << "\n";
         return 1;
     }
@@ -51,6 +55,8 @@ int Run(const int argc, char* argv[]) {
         std::cout << Cli::Usage() << '\n';
         return 0;
     }
+
+    PROFILE_SCOPE_CHANNEL(Diagnostics::LogChannel::Loader, "RelinkerMain");
 
     try {
         auto extension = Io::Utf8Path(Io::NativePath(args.outputPath).extension());
@@ -184,17 +190,23 @@ int Run(const int argc, char* argv[]) {
         if (args.autorun) return Cli::Autorun(absPath, args.toWindows);
 
     } catch (const Domain::RelinkerException& e) {
+        LOG_ERROR(Diagnostics::LogChannel::Loader, std::string("Relinker exception: ") + e.what());
+        Diagnostics::Logger::GetInstance().DumpRingBuffer();
         std::cerr << "FAIL: " << e.what();
         if (e.FailureOffset != 0) std::cerr << " (offset 0x" << std::hex << e.FailureOffset << ")";
         std::cerr << "\n";
         if (!e.InputPath.empty()) std::cerr << "Input: " << e.InputPath << '\n';
         return 2;
     } catch (const Codegen::CodegenException& e) {
+        LOG_ERROR(Diagnostics::LogChannel::Loader, std::string("Codegen exception: ") + e.what());
+        Diagnostics::Logger::GetInstance().DumpRingBuffer();
         std::cerr << "FAIL: " << e.what();
         if (e.FailureOffset != 0) std::cerr << " (offset 0x" << std::hex << e.FailureOffset << ")";
         std::cerr << "\n";
         return 2;
     } catch (const std::exception& e) {
+        LOG_ERROR(Diagnostics::LogChannel::Loader, std::string("Unexpected exception: ") + e.what());
+        Diagnostics::Logger::GetInstance().DumpRingBuffer();
         std::cerr << "FAIL: " << e.what() << "\n";
         return 2;
     }

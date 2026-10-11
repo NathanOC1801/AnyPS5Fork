@@ -294,6 +294,7 @@ function(add_shader_recompiler target runtimeTarget)
 
     target_link_libraries(${target} PRIVATE
             ${runtimeTarget}
+            diagnostics
             glslang
             SPIRV
     )
