@@ -3,6 +3,8 @@
 #include <relinker/analysis/ValidationPolicy.hpp>
 #include <relinker/analysis/UnusedNidFilter/PltCompactor.hpp>
 #include <relinker/analysis/UnusedNidFilter/EhFrameReader.hpp>
+#include <diagnostics/ProfileScope.hpp>
+#include <diagnostics/Logger.hpp>
 #include <algorithm>
 #include <optional>
 #include <sstream>
@@ -42,6 +44,7 @@ std::string RelinkerPipeline::_relocationTypeName(std::uint32_t type) {
 }
 
 RelinkResult RelinkerPipeline::Relink(const std::vector<std::uint8_t>& sourceElf) {
+    PROFILE_SCOPE_CHANNEL(Diagnostics::LogChannel::Loader, "RelinkerPipeline::Relink");
     auto programHeaders = _elfReader->ReadProgramHeaders();
 
     std::vector<std::uint8_t> textSection;

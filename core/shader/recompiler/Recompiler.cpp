@@ -1,4 +1,6 @@
 #include "Recompiler.hpp"
+#include <diagnostics/Logger.hpp>
+#include <diagnostics/ProfileScope.hpp>
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -845,6 +847,7 @@ RecompileResult materializeVariant(SourceEntry& source, const RecompileRequest& 
 }
 
 RecompileResult RecompileImpl(const RecompileRequest& request) {
+    PROFILE_SCOPE_CHANNEL(Diagnostics::LogChannel::GpuSpirv, "ShaderRecompilation");
     static_cast<void>(RequestInputInfo(request));
     RequestMemoryView memory(request.context.memory);
     const auto runtime = memory.MakeRuntime(request.context.userData, request.shader.codeAddress);
@@ -1031,8 +1034,13 @@ auto recompileReporting(const RecompileRequest& request, Impl&& impl) -> decltyp
     } catch (const std::exception& e) {
         constexpr auto requestSerializer = RequestSerializer{};
         const auto inputInfo = "\nRecompileRequest:\n" + requestSerializer.Serialize(request);
-        throw std::runtime_error(std::string("ShaderRecompiler::Recompile: ") + e.what() + inputInfo);
+        const auto errMsg = std::string("ShaderRecompiler::Recompile: ") + e.what() + inputInfo;
+        LOG_ERROR(Diagnostics::LogChannel::GpuSpirv, errMsg);
+        Diagnostics::Logger::GetInstance().DumpRingBuffer();
+        throw std::runtime_error(errMsg);
     } catch (...) {
+        LOG_ERROR(Diagnostics::LogChannel::GpuSpirv, "ShaderRecompiler::Recompile: unknown exception");
+        Diagnostics::Logger::GetInstance().DumpRingBuffer();
         throw std::runtime_error("ShaderRecompiler::Recompile: unknown exception");
     }
 }

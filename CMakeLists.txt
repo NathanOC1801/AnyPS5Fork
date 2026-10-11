@@ -68,6 +68,8 @@ if(BUILD_TESTING)
     endif()
 endif()
 
+add_subdirectory(core/diagnostics)
+
 if(ANYPS5_RELINKER_ONLY)
     add_subdirectory(core/relinker)
     return()

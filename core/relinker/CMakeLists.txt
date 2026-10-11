@@ -80,6 +80,7 @@ target_include_directories(relinker PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/relinker/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../libs
 )
+target_link_libraries(relinker PRIVATE diagnostics)
 
 if(WIN32)
     target_compile_options(relinker PRIVATE -municode)
